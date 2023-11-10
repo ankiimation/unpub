@@ -2,8 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'models.g.dart';
 
-DateTime identity(DateTime x) => x;
-
 @JsonSerializable(includeIfNull: false)
 class UnpubVersion {
   final String version;
@@ -12,8 +10,6 @@ class UnpubVersion {
   final String? uploader; // TODO: not sure why null. keep it nullable
   final String? readme;
   final String? changelog;
-
-  @JsonKey(fromJson: identity, toJson: identity)
   final DateTime createdAt;
 
   UnpubVersion(
@@ -38,13 +34,8 @@ class UnpubPackage {
   final List<UnpubVersion> versions;
   final bool private;
   final List<String>? uploaders;
-
-  @JsonKey(fromJson: identity, toJson: identity)
   final DateTime createdAt;
-
-  @JsonKey(fromJson: identity, toJson: identity)
   final DateTime updatedAt;
-
   final int? download;
 
   UnpubPackage(
@@ -59,6 +50,8 @@ class UnpubPackage {
 
   factory UnpubPackage.fromJson(Map<String, dynamic> map) =>
       _$UnpubPackageFromJson(map);
+
+  Map<String, dynamic> toJson() => _$UnpubPackageToJson(this);
 }
 
 @JsonSerializable()

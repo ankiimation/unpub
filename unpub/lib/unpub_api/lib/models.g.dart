@@ -15,7 +15,7 @@ ListApi _$ListApiFromJson(Map<String, dynamic> json) => ListApi(
 
 Map<String, dynamic> _$ListApiToJson(ListApi instance) => <String, dynamic>{
       'count': instance.count,
-      'packages': instance.packages,
+      'packages': instance.packages.map((e) => e.toJson()).toList(),
     };
 
 ListApiPackage _$ListApiPackageFromJson(Map<String, dynamic> json) =>
@@ -78,7 +78,7 @@ Map<String, dynamic> _$WebapiDetailViewToJson(WebapiDetailView instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'readme': instance.readme,
       'changelog': instance.changelog,
-      'versions': instance.versions,
+      'versions': instance.versions.map((e) => e.toJson()).toList(),
       'authors': instance.authors,
       'dependencies': instance.dependencies,
       'tags': instance.tags,

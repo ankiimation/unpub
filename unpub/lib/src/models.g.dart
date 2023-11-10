@@ -13,7 +13,7 @@ UnpubVersion _$UnpubVersionFromJson(Map<String, dynamic> json) => UnpubVersion(
       json['uploader'] as String?,
       json['readme'] as String?,
       json['changelog'] as String?,
-      identity(json['createdAt'] as DateTime),
+      DateTime.parse(json['createdAt'] as String),
     );
 
 Map<String, dynamic> _$UnpubVersionToJson(UnpubVersion instance) {
@@ -32,7 +32,7 @@ Map<String, dynamic> _$UnpubVersionToJson(UnpubVersion instance) {
   writeNotNull('uploader', instance.uploader);
   writeNotNull('readme', instance.readme);
   writeNotNull('changelog', instance.changelog);
-  writeNotNull('createdAt', identity(instance.createdAt));
+  val['createdAt'] = instance.createdAt.toIso8601String();
   return val;
 }
 
@@ -43,19 +43,19 @@ UnpubPackage _$UnpubPackageFromJson(Map<String, dynamic> json) => UnpubPackage(
           .toList(),
       json['private'] as bool,
       (json['uploaders'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      identity(json['createdAt'] as DateTime),
-      identity(json['updatedAt'] as DateTime),
+      DateTime.parse(json['createdAt'] as String),
+      DateTime.parse(json['updatedAt'] as String),
       json['download'] as int?,
     );
 
 Map<String, dynamic> _$UnpubPackageToJson(UnpubPackage instance) =>
     <String, dynamic>{
       'name': instance.name,
-      'versions': instance.versions,
+      'versions': instance.versions.map((e) => e.toJson()).toList(),
       'private': instance.private,
       'uploaders': instance.uploaders,
-      'createdAt': identity(instance.createdAt),
-      'updatedAt': identity(instance.updatedAt),
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt.toIso8601String(),
       'download': instance.download,
     };
 
@@ -70,5 +70,5 @@ UnpubQueryResult _$UnpubQueryResultFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$UnpubQueryResultToJson(UnpubQueryResult instance) =>
     <String, dynamic>{
       'count': instance.count,
-      'packages': instance.packages,
+      'packages': instance.packages.map((e) => e.toJson()).toList(),
     };

@@ -1,24 +1,26 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:archive/archive.dart';
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:shelf/shelf.dart' as shelf;
-import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:googleapis/oauth2/v2.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-import 'package:googleapis/oauth2/v2.dart';
-import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
+import 'package:pub_semver/pub_semver.dart' as semver;
+import 'package:shelf/shelf.dart' as shelf;
+import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:shelf_router/shelf_router.dart';
-import 'package:pub_semver/pub_semver.dart' as semver;
-import 'package:archive/archive.dart';
-import 'package:unpub/src/models.dart';
-import 'package:unpub/unpub_api/lib/models.dart';
 import 'package:unpub/src/meta_store.dart';
+import 'package:unpub/src/models.dart';
 import 'package:unpub/src/package_store.dart';
-import 'utils.dart';
+import 'package:unpub/unpub_api/lib/models.dart';
+
 import 'static/index.html.dart' as index_html;
 import 'static/main.dart.js.dart' as main_dart_js;
+import 'utils.dart';
 
 part 'app.g.dart';
 
@@ -32,7 +34,7 @@ class App {
   final PackageStore packageStore;
 
   /// upstream url, default: https://pub.dev
-  final String upstream;
+  // final String upstream;
 
   /// http(s) proxy to call googleapis (to get uploader email)
   final String? googleapisProxy;
@@ -50,7 +52,7 @@ class App {
   App({
     required this.metaStore,
     required this.packageStore,
-    this.upstream = 'https://pub.dev',
+    // this.upstream = 'https://pub.dev',
     this.googleapisProxy,
     this.overrideUploaderEmail,
     this.uploadValidator,
@@ -65,6 +67,17 @@ class App {
           'Access-Control-Allow-Origin': '*'
         },
       );
+
+  static _packageNotFoundJson(String packageName) {
+    return _okWithJson({
+      "error": {
+        "code": "NotFound",
+        "message": "Could not find `package \"$packageName\"`."
+      },
+      "code": "NotFound",
+      "message": "Could not find `package \"$packageName\"`."
+    });
+  }
 
   static shelf.Response _successMessage(String message) => _okWithJson({
         'success': {'message': message}
@@ -135,7 +148,8 @@ class App {
     var name = item.pubspec['name'] as String;
     var version = item.version;
     return {
-      'archive_url': _resolveUrl(req, '/packages/$name/versions/$version.tar.gz'),
+      'archive_url':
+          _resolveUrl(req, '/packages/$name/versions/$version.tar.gz'),
       'pubspec': item.pubspec,
       'version': version,
     };
@@ -154,8 +168,7 @@ class App {
     var package = await metaStore.queryPackage(name);
 
     if (package == null) {
-      return shelf.Response.found(
-          Uri.parse(upstream).resolve('/api/packages/$name').toString());
+      return _packageNotFoundJson(name);
     }
 
     package.versions.sort((a, b) {
@@ -163,9 +176,8 @@ class App {
           semver.Version.parse(a.version), semver.Version.parse(b.version));
     });
 
-    var versionMaps = package.versions
-        .map((item) => _versionToJson(item, req))
-        .toList();
+    var versionMaps =
+        package.versions.map((item) => _versionToJson(item, req)).toList();
 
     return _okWithJson({
       'name': name,
@@ -186,9 +198,7 @@ class App {
 
     var package = await metaStore.queryPackage(name);
     if (package == null) {
-      return shelf.Response.found(Uri.parse(upstream)
-          .resolve('/api/packages/$name/versions/$version')
-          .toString());
+      return _packageNotFoundJson(name);
     }
 
     var packageVersion =
@@ -205,9 +215,7 @@ class App {
       shelf.Request req, String name, String version) async {
     var package = await metaStore.queryPackage(name);
     if (package == null) {
-      return shelf.Response.found(Uri.parse(upstream)
-          .resolve('/packages/$name/versions/$version.tar.gz')
-          .toString());
+      return _packageNotFoundJson(name);
     }
 
     if (isPubClient(req)) {
@@ -228,8 +236,7 @@ class App {
   @Route.get('/api/packages/versions/new')
   Future<shelf.Response> getUploadUrl(shelf.Request req) async {
     return _okWithJson({
-      'url': _resolveUrl(req, '/api/packages/versions/newUpload')
-          .toString(),
+      'url': _resolveUrl(req, '/api/packages/versions/newUpload').toString(),
       'fields': {},
     });
   }
@@ -342,9 +349,11 @@ class App {
       await metaStore.addVersion(name, unpubVersion);
 
       // TODO: Upload docs
-      return shelf.Response.found(_resolveUrl(req, '/api/packages/versions/newUploadFinish'));
+      return shelf.Response.found(
+          _resolveUrl(req, '/api/packages/versions/newUploadFinish'));
     } catch (err) {
-      return shelf.Response.found(_resolveUrl(req, '/api/packages/versions/newUploadFinish?error=$err'));
+      return shelf.Response.found(_resolveUrl(
+          req, '/api/packages/versions/newUploadFinish?error=$err'));
     }
   }
 
